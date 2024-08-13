@@ -1,0 +1,74 @@
+TensorFlow, Python, Hadoop, PyTorch, numpy, Keras, PyTorch, and NLTK. 
+
+import pandas as pd
+from fuzzywuzzy import process
+import nltk
+from nltk.corpus import wordnet
+
+# Download NLTK data if not already present
+nltk.download('wordnet')
+
+# Sample Data
+data = {
+    'id': [1, 2, 3, 4, 5],
+    'name': ['Laptop', 'Smartphone', 'Tablet', 'Monitor', 'Keyboard'],
+    'category': ['Electronics', 'Electronics', 'Electronics', 'Electronics', 'Accessories'],
+    'price': [1200, 800, 450, 300, 50]
+}
+
+# Create DataFrame
+df = pd.DataFrame(data)
+
+# Helper function to get synonyms
+def get_synonyms(word):
+    synonyms = set()
+    for syn in wordnet.synsets(word):
+        for lemma in syn.lemmas():
+            synonyms.add(lemma.name())
+    return synonyms
+
+# Faceted Search Function
+def faceted_search(df, category=None, price_range=None):
+    if category:
+        df = df[df['category'].str.contains(category, case=False, na=False)]
+    if price_range:
+        min_price, max_price = price_range
+        df = df[(df['price'] >= min_price) & (df['price'] <= max_price)]
+    return df
+
+# Filter by Attributes
+def filter_by_attributes(df, attribute_dict):
+    for key, value in attribute_dict.items():
+        if key in df.columns:
+            df = df[df[key].str.contains(value, case=False, na=False)]
+    return df
+
+# Search Synonyms Function
+def search_synonyms(df, query):
+    synonyms = get_synonyms(query)
+    match = process.extractOne(query, df['name'])
+    if match:
+        return df[df['name'].str.contains(match[0], case=False, na=False)]
+    return pd.DataFrame()
+
+# Example Usage
+def main():
+    # Faceted Search Example
+    category = 'Electronics'
+    price_range = (100, 500)
+    result = faceted_search(df, category=category, price_range=price_range)
+    print("Faceted Search Result:")
+    print(result)
+
+    # Filter by Attributes Example
+    attribute_dict = {'name': 'Laptop'}
+    result = filter_by_attributes(df, attribute_dict)
+    print("\nFilter by Attributes Result:")
+    print(result)
+
+    # Search Synonyms Example
+    query = 'laptop'
+    result = search_synonyms(df, query)
+    print("\nSearch Synonyms Result:")
+    print(result)
+
